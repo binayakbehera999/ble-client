@@ -20,9 +20,9 @@ import {
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
-const SECONDS_TO_SCAN_FOR = 20;
+const SECONDS_TO_SCAN_FOR = 5;
 const SERVICE_UUIDS: string[] = [];
-const ALLOW_DUPLICATES = true;
+const ALLOW_DUPLICATES = false;
 
 import BleManager, {
   BleDisconnectPeripheralEvent,
@@ -110,7 +110,6 @@ const App = () => {
   };
 
   const handleDiscoverPeripheral = (peripheral: Peripheral) => {
-    console.log('hello');
     console.debug('[handleDiscoverPeripheral] new BLE peripheral=', peripheral);
     if (!peripheral.name) {
       peripheral.name = 'NO NAME';
@@ -199,7 +198,7 @@ const App = () => {
         const peripheralData = await BleManager.retrieveServices(peripheral.id);
         console.debug(
           `[connectPeripheral][${peripheral.id}] retrieved peripheral services`,
-          peripheralData,
+          JSON.stringify(peripheralData),
         );
 
         const rssi = await BleManager.readRSSI(peripheral.id);
@@ -207,31 +206,44 @@ const App = () => {
           `[connectPeripheral][${peripheral.id}] retrieved current RSSI value: ${rssi}.`,
         );
 
-        if (peripheralData.characteristics) {
-          for (let characteristic of peripheralData.characteristics) {
-            if (characteristic.descriptors) {
-              for (let descriptor of characteristic.descriptors) {
-                try {
-                  let data = await BleManager.readDescriptor(
-                    peripheral.id,
-                    characteristic.service,
-                    characteristic.characteristic,
-                    descriptor.uuid,
-                  );
-                  console.debug(
-                    `[connectPeripheral][${peripheral.id}] ${characteristic.service} ${characteristic.characteristic} ${descriptor.uuid} descriptor read as:`,
-                    data,
-                  );
-                } catch (error) {
-                  console.error(
-                    `[connectPeripheral][${peripheral.id}] failed to retrieve descriptor ${descriptor} for characteristic ${characteristic}:`,
-                    error,
-                  );
-                }
-              }
-            }
-          }
-        }
+        await BleManager.read(
+          peripheralData.id,
+          'cb0f22c6-1000-4737-9f86-1c33f4ee9eea',
+          'cb0f22c6-1001-41a0-93d4-9025f8b5eafe',
+        ).then(data => {
+          console.log(data);
+          const byteArrayToString = (data: number[]): string => {
+            return String.fromCharCode(...data);
+          };
+        let result: string = byteArrayToString(data);
+        console.log(result);
+        });
+
+        // if (peripheralData.characteristics) {
+        //   for (let characteristic of peripheralData.characteristics) {
+        //     if (characteristic.descriptors) {
+        //       for (let descriptor of characteristic.descriptors) {
+        //         try {
+        //           let data = await BleManager.readDescriptor(
+        //             peripheral.id,
+        //             characteristic.service,
+        //             characteristic.characteristic,
+        //             descriptor.uuid,
+        //           );
+        //           console.debug(
+        //             `[connectPeripheral][${peripheral.id}] ${characteristic.service} ${characteristic.characteristic} ${descriptor.uuid} descriptor read as:`,
+        //             data,
+        //           );
+        //         } catch (error) {
+        //           console.error(
+        //             `[connectPeripheral][${peripheral.id}] failed to retrieve descriptor ${descriptor} for characteristic ${characteristic}:`,
+        //             error,
+        //           );
+        //         }
+        //       }
+        //     }
+        //   }
+        // }
 
         setPeripherals(map => {
           let p = map.get(peripheral.id);
@@ -301,6 +313,7 @@ const App = () => {
       PermissionsAndroid.requestMultiple([
         PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
         PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       ]).then(result => {
         if (result) {
           console.debug(
@@ -340,7 +353,7 @@ const App = () => {
   };
 
   const renderItem = ({item}: {item: Peripheral}) => {
-    const backgroundColor = item.connected ? '#069400' : Colors.white;
+    const backgroundColor = item.connected ? '#069400' : 'fc0000';
     return (
       <TouchableHighlight
         underlayColor="#0082FC"
@@ -384,7 +397,7 @@ const App = () => {
 
         <FlatList
           data={Array.from(peripherals.values())}
-          contentContainerStyle={{rowGap: 12}}
+          contentContainerStyle={{ rowGap: 12 }}
           renderItem={renderItem}
           keyExtractor={item => item.id}
         />
