@@ -104,8 +104,10 @@ const App = () => {
   const handleUpdateValueForCharacteristic = (
     data: BleManagerDidUpdateValueForCharacteristicEvent,
   ) => {
+    let res = byteArrayToString(data.value);
+    let t = performance.now();
     console.debug(
-      `[handleUpdateValueForCharacteristic] received data from '${data.peripheral}' with characteristic='${data.characteristic}' and value='${data.value}'`,
+      `[handleUpdateValueForCharacteristic] ${t} received data from '${data.peripheral}' with characteristic='${data.characteristic}' and value='${res}'`,
     );
   };
 
@@ -166,6 +168,10 @@ const App = () => {
     }
   };
 
+  const byteArrayToString = (data: number[]): string => {
+    return String.fromCharCode(...data);
+  };
+
   const connectPeripheral = async (peripheral: Peripheral) => {
     try {
       if (peripheral) {
@@ -206,41 +212,41 @@ const App = () => {
           `[connectPeripheral][${peripheral.id}] retrieved current RSSI value: ${rssi}.`,
         );
 
-        await BleManager.read(
+        await BleManager.startNotification(
           peripheralData.id,
           'cb0f22c6-1000-4737-9f86-1c33f4ee9eea',
           'cb0f22c6-1001-41a0-93d4-9025f8b5eafe',
-        ).then(data => {
-          console.log(data);
-          const byteArrayToString = (data: number[]): string => {
-            return String.fromCharCode(...data);
-          };
-        let result: string = byteArrayToString(data);
-        console.log(result);
-        });
+        )
+          .then(() => {
+            console.log(
+              `[connectPeripheral][${peripheral.id}] with service id cb0f22c6-1000-4737-9f86-1c33f4ee9eea charaterstic id cb0f22c6-1001-41a0-93d4-9025f8b5eafe started notification`,
+            );
+          })
+          .catch(err => {
+            console.error(
+              `[connectPeripheral][${peripheral.id}] with service id cb0f22c6-1000-4737-9f86-1c33f4ee9eea charaterstic id cb0f22c6-1001-41a0-93d4-9025f8b5eafe failed to start notification`,
+              err,
+            );
+          });
 
         // if (peripheralData.characteristics) {
         //   for (let characteristic of peripheralData.characteristics) {
-        //     if (characteristic.descriptors) {
-        //       for (let descriptor of characteristic.descriptors) {
-        //         try {
-        //           let data = await BleManager.readDescriptor(
-        //             peripheral.id,
-        //             characteristic.service,
-        //             characteristic.characteristic,
-        //             descriptor.uuid,
-        //           );
-        //           console.debug(
-        //             `[connectPeripheral][${peripheral.id}] ${characteristic.service} ${characteristic.characteristic} ${descriptor.uuid} descriptor read as:`,
-        //             data,
-        //           );
-        //         } catch (error) {
-        //           console.error(
-        //             `[connectPeripheral][${peripheral.id}] failed to retrieve descriptor ${descriptor} for characteristic ${characteristic}:`,
-        //             error,
-        //           );
-        //         }
-        //       }
+        //     try {
+        //       let data = await BleManager.read(
+        //         peripheral.id,
+        //         characteristic.service,
+        //         characteristic.characteristic,
+        //       );
+        //       console.debug(
+        //         `[connectPeripheral][${peripheral.id}] ${characteristic.service} ${characteristic.characteristic} read as:`,
+        //       );
+        //       let result: string = byteArrayToString(data);
+        //       console.debug(result);
+        //     } catch (error) {
+        //       console.error(
+        //         `[connectPeripheral][${peripheral.id}] failed to retrieve  characteristic ${characteristic}:`,
+        //         error,
+        //       );
         //     }
         //   }
         // }
@@ -397,7 +403,7 @@ const App = () => {
 
         <FlatList
           data={Array.from(peripherals.values())}
-          contentContainerStyle={{ rowGap: 12 }}
+          contentContainerStyle={{rowGap: 12}}
           renderItem={renderItem}
           keyExtractor={item => item.id}
         />
