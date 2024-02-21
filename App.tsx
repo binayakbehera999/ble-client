@@ -105,6 +105,7 @@ const App = () => {
     data: BleManagerDidUpdateValueForCharacteristicEvent,
   ) => {
     let res = byteArrayToString(data.value);
+    console.log(data);
     let t = performance.now();
     console.debug(
       `[handleUpdateValueForCharacteristic] ${t} received data from '${data.peripheral}' with characteristic='${data.characteristic}' and value='${res}'`,
