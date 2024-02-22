@@ -104,11 +104,10 @@ const App = () => {
   const handleUpdateValueForCharacteristic = (
     data: BleManagerDidUpdateValueForCharacteristicEvent,
   ) => {
-    let res = byteArrayToString(data.value);
-    console.log(data);
-    let t = performance.now();
+    let coordinates = byteArrayToString(data.value);
+    let time = new Date().toLocaleTimeString();
     console.debug(
-      `[handleUpdateValueForCharacteristic] ${t} received data from '${data.peripheral}' with characteristic='${data.characteristic}' and value='${res}'`,
+      `[handleUpdateValueForCharacteristic] At ${time} received data coordinates value='${coordinates}'`,
     );
   };
 
@@ -212,23 +211,22 @@ const App = () => {
         console.debug(
           `[connectPeripheral][${peripheral.id}] retrieved current RSSI value: ${rssi}.`,
         );
+        try {
+          await BleManager.startNotification(
+            peripheralData.id,
+            'cb0f22c6-1000-4737-9f86-1c33f4ee9eea',
+            'cb0f22c6-1001-41a0-93d4-9025f8b5eafe',
+          );
 
-        await BleManager.startNotification(
-          peripheralData.id,
-          'cb0f22c6-1000-4737-9f86-1c33f4ee9eea',
-          'cb0f22c6-1001-41a0-93d4-9025f8b5eafe',
-        )
-          .then(() => {
-            console.log(
-              `[connectPeripheral][${peripheral.id}] with service id cb0f22c6-1000-4737-9f86-1c33f4ee9eea charaterstic id cb0f22c6-1001-41a0-93d4-9025f8b5eafe started notification`,
-            );
-          })
-          .catch(err => {
-            console.error(
-              `[connectPeripheral][${peripheral.id}] with service id cb0f22c6-1000-4737-9f86-1c33f4ee9eea charaterstic id cb0f22c6-1001-41a0-93d4-9025f8b5eafe failed to start notification`,
-              err,
-            );
-          });
+          console.log(
+            `[connectPeripheral][${peripheral.id}] with service id cb0f22c6-1000-4737-9f86-1c33f4ee9eea charaterstic id cb0f22c6-1001-41a0-93d4-9025f8b5eafe started notification`,
+          );
+        } catch (err) {
+          console.error(
+            `[connectPeripheral][${peripheral.id}] with service id cb0f22c6-1000-4737-9f86-1c33f4ee9eea charaterstic id cb0f22c6-1001-41a0-93d4-9025f8b5eafe failed to start notification`,
+            err,
+          );
+        }
 
         // if (peripheralData.characteristics) {
         //   for (let characteristic of peripheralData.characteristics) {
