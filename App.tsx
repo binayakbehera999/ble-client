@@ -128,6 +128,8 @@ const App = () => {
   const connectPeripheral = async (peripheral: string) => {
     try {
       if (peripheral) {
+        console.log("here here");
+        setIsScanning(true);
         //setPeripheral({...peripheral, connecting: true});
 
         await BleManager.connect(peripheral, {
@@ -218,7 +220,7 @@ const App = () => {
     ];
 
     handleAndroidPermissions();
-    connectPeripheral('E8:6B:EA:CF:C6:E2');
+    // connectPeripheral('E8:6B:EA:CF:C6:E2');
     return () => {
       console.debug('[app] main component unmounting. Removing listeners...');
       for (const listener of listeners) {
@@ -226,6 +228,25 @@ const App = () => {
       }
     };
   }, []);
+
+
+  const togglePeripheralConnection = async (peripheral: string) => {
+    if (peripheralFound) {
+      try {
+        setIsScanning(true);
+        await BleManager.disconnect(peripheral);
+        setPeripheralFound(false);
+        setIsScanning(false);
+      } catch (error) {
+        console.error(
+          `[togglePeripheralConnection][${peripheral}] error when trying to disconnect device.`,
+          error,
+        );
+      }
+    } else {
+      await connectPeripheral(peripheral);
+    }
+  };
 
   const handleAndroidPermissions = () => {
     if (Platform.OS === 'android' && Platform.Version >= 31) {
@@ -275,19 +296,17 @@ const App = () => {
     <>
       <StatusBar />
       <View>
-        {isScanning ? (
-          <ActivityIndicator size="large" color="00ff00" />
-        ) : (
+
           <View>
             <Text>
-              Vechicle - {peripheralFound ? <Text>ON</Text> : <Text>off</Text>}
+            Vechicle - {peripheralFound ? <Text>Connected</Text> : <Text>disconnected</Text>}
             </Text>
             <Text>{location}</Text>
-            <Pressable style={styles.scanButton} onPress={startScan}>
-              <Text style={styles.scanButtonText}>'Scan Bluetooth'</Text>
+          <Pressable style={styles.scanButton} onPress={() => togglePeripheralConnection('E8:6B:EA:CF:C6:E2')}>
+            {!isScanning ? <ActivityIndicator size="large" color="00ff00" /> : <Text style={styles.scanButtonText}>{peripheralFound ? 'Disconnect' : 'Connect'}</Text>}
+
             </Pressable>
           </View>
-        )}
       </View>
     </>
   );
